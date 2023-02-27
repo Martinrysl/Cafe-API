@@ -1,8 +1,10 @@
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, jsonify, render_template, request, redirect
 from flask_sqlalchemy import SQLAlchemy
 from random import randint
 from sqlalchemy.sql.expression import func
 import sqlite3
+
+TopSecretAPIKey = 'zapato'
 
 app = Flask(__name__)
 
@@ -107,6 +109,21 @@ def patch(cafe_id):
         return jsonify(response={"success": "Successfully updated the price."})
     else:
         return jsonify(error={"Not Found": "Sorry a cafe with that id was not found in the database."})
+
+
+@app.route("/report-closed/<int:id>", methods=["DELETE"])
+def delete(id):
+    api_key = request.args.get("api_key")
+    if api_key == TopSecretAPIKey:
+        cafe = Cafe.query.get(id)
+        if cafe:
+            db.session.delete(cafe)
+            db.session.commit()
+            return jsonify(response={"success": "Successfully deleted the cafe from the database."}), 200
+        else:
+            return jsonify(error={"Not Found": "Sorry a cafe with that id was not found in the database."}), 404
+    else:
+        return jsonify(error={"Forbidden": "Sorry, that's not allowed. Make sure you have the correct api_key."}), 403
 
 
 if __name__ == '__main__':
